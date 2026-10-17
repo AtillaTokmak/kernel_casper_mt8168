@@ -13,7 +13,7 @@
 
 # common driver code for CMDQ
 
-MTK_PLATFORM := $(CONFIG_MTK_PLATFORM)
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 
 ccflags-$(CONFIG_MACH_MT6768) += -DCMDQ_MDP_ENABLE_SPR
 
@@ -26,7 +26,9 @@ ccflags-y += -DCMDQ_DEVAPC
 endif
 endif
 
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/smi/ \
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq/v3/ \
+             -I$(srctree)/drivers/misc/mediatek/cmdq/v3/$(MTK_PLATFORM)/ \
+             -I$(srctree)/drivers/misc/mediatek/smi/ \
              -I$(srctree)/drivers/misc/mediatek/smi/$(MTK_PLATFORM)/ \
              -I$(srctree)/drivers/misc/mediatek/mmdvfs/ \
              -I$(srctree)/drivers/misc/mediatek/mmp/ \

@@ -979,7 +979,8 @@ static void f716_lcm_get_params(struct LCM_PARAMS *params)
 	params->type   = LCM_TYPE_DSI;
 	params->width  = FRAME_WIDTH;
 	params->height = FRAME_HEIGHT;
-	params->dsi.mode   = SYNC_PULSE_VDO_MODE;
+	params->dsi.mode   = SYNC_EVENT_VDO_MODE;
+	params->dsi.switch_mode = SYNC_EVENT_VDO_MODE;
 
 	params->dsi.LANE_NUM				= LCM_FOUR_LANE;
 	params->dsi.data_format.color_order = LCM_COLOR_ORDER_RGB;

@@ -43,7 +43,6 @@
 #endif
 #include "lcm_drv.h"
 #include <mt-plat/items.h>
-#include "f716_fx_ek79029_boe_wxga_ips_8.h"
 
 #ifndef BUILD_LK
 static unsigned int GPIO_LCD_RST = -1;
@@ -183,10 +182,10 @@ static int lcm_driver_probe(struct device *dev, void const *data)
 static const struct of_device_id lcm_platform_of_match[] = {
 	{
 		.compatible = "jd,jd936x",
-		.data = 0,
+		.data = (void *)0,
 	}, {
 		.compatible = "kd,mid-lcm",
-		.data = 1,
+		.data = (void *)1,
 	}, {
 		/* sentinel */
 	}
@@ -273,6 +272,8 @@ static struct LCM_UTIL_FUNCS lcm_util = { 0 };
 		 (lcm_util.dsi_read_reg())
 #define read_reg_v2(cmd, buffer, buffer_size) \
 		 (lcm_util.dsi_dcs_read_lcm_reg_v2(cmd, buffer, buffer_size))
+
+#include "f716_fx_ek79029_boe_wxga_ips_8.h"
 
 static void lcm_set_gpio_output(unsigned int GPIO, unsigned int output)
 {

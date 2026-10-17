@@ -135,12 +135,20 @@ static void switch_port_to_device(struct ssusb_mtk *ssusb)
 	ssusb_check_clocks(ssusb, check_clk);
 }
 
+#ifdef CONFIG_ROCO_OTG_EN
+extern void otg_en_set(int enable);
+#endif
+
 int ssusb_set_vbus(struct otg_switch_mtk *otg_sx, int is_on)
 {
 	struct ssusb_mtk *ssusb =
 		container_of(otg_sx, struct ssusb_mtk, otg_switch);
 	struct regulator *vbus = otg_sx->vbus;
 	int ret;
+
+#ifdef CONFIG_ROCO_OTG_EN
+	otg_en_set(is_on);
+#endif
 
 	/* vbus is optional */
 	if (!vbus)

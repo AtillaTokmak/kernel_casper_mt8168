@@ -55,4 +55,6 @@ ifneq ($(CONFIG_USB_MTU3_DUAL_ROLE),)
 	mtu3-y	+= mtu3_dr.o
 endif
 
+obj-$(CONFIG_ROCO_OTG_EN) += otgen.o
+
 endif

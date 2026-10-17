@@ -11,12 +11,15 @@
 # GNU General Public License for more details.
 #
 
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+
 ifeq (y, $(filter y, $(CONFIG_MACH_MT6765) $(CONFIG_MACH_MT6761)))
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/leds/mt6765
 else
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/leds/$(MTK_PLATFORM)
 endif
 
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/leds
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include
 
 obj-$(CONFIG_MTK_LEDS) += mtk_leds_drv.o

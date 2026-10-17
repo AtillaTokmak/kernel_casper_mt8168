@@ -32,7 +32,11 @@
 #endif
 
 #include "mtk_gslX680.h"
+#include "f716_gsl1680_wxga.h"
+#include <mt-plat/items.h>
 #include "tpd.h"
+
+static int gsl_use_f716_fw = 1;
 
 #include "mtk_boot_common.h"
 #include <linux/device.h>
@@ -582,7 +586,10 @@ static void startup_chip(struct i2c_client *client)
 
 	gsl_i2c_write_bytes(client, 0xe0, &write_buf, 1);
 #ifdef GSL_NOID_VERSION
-	gsl_DataInit(gsl_config_data_id);
+	if (gsl_use_f716_fw)
+		gsl_DataInit((int *)gsl_config_data_f716);
+	else
+		gsl_DataInit(gsl_config_data_id);
 #endif
 
 	usleep_range(10000, 11000);
@@ -723,8 +730,13 @@ static void gsl_load_fw(struct i2c_client *client)
 
 	GSL_LOGD("===%s start===\n", __func__);
 
-	ptr_fw = GSLX680_FW;
-	source_len = ARRAY_SIZE(GSLX680_FW);
+	if (gsl_use_f716_fw) {
+		ptr_fw = (struct fw_data *)GSLX680_FW_F716;
+		source_len = ARRAY_SIZE(GSLX680_FW_F716);
+	} else {
+		ptr_fw = (struct fw_data *)GSLX680_FW;
+		source_len = ARRAY_SIZE(GSLX680_FW);
+	}
 	for (source_line = 0; source_line < source_len; source_line++) {
 		/* init page trans, set the page val */
 		if (ptr_fw[source_line].offset == GSL_PAGE_REG) {
@@ -757,20 +769,27 @@ static void gsl_load_fw(struct i2c_client *client)
 {
 	u8 buf[SMBUS_TRANS_LEN * 4] = {0};
 	u8 reg = 0, send_flag = 1, cur = 0;
-
+	const struct fw_data *ptr_fw;
 	unsigned int source_line = 0;
-	unsigned int source_len = ARRAY_SIZE(GSLX680_FW);
+	unsigned int source_len;
 
 	GSL_LOGD("===%s start===\n", __func__);
+	if (gsl_use_f716_fw) {
+		ptr_fw = GSLX680_FW_F716;
+		source_len = ARRAY_SIZE(GSLX680_FW_F716);
+	} else {
+		ptr_fw = GSLX680_FW;
+		source_len = ARRAY_SIZE(GSLX680_FW);
+	}
 	for (source_line = 0; source_line < source_len; source_line++) {
 		if (1 == SMBUS_TRANS_LEN) {
-			reg = GSLX680_FW[source_line].offset;
-			memcpy(&buf[0], &GSLX680_FW[source_line].val, 4);
+			reg = ptr_fw[source_line].offset;
+			memcpy(&buf[0], &ptr_fw[source_line].val, 4);
 			gsl_i2c_write_bytes(client, reg, buf, 4);
 		} else {
 			/* init page trans, set the page val */
-			if (GSLX680_FW[source_line].offset == GSL_PAGE_REG) {
-				buf[0] = (u8)(GSLX680_FW[source_line].val &
+			if (ptr_fw[source_line].offset == GSL_PAGE_REG) {
+				buf[0] = (u8)(ptr_fw[source_line].val &
 					      0x000000ff);
 				gsl_i2c_write_bytes(client, GSL_PAGE_REG,
 						    &buf[0], 1);
@@ -780,9 +799,9 @@ static void gsl_load_fw(struct i2c_client *client)
 				    1 % (SMBUS_TRANS_LEN < 0x08
 						 ? SMBUS_TRANS_LEN
 						 : 0x08))
-					reg = GSLX680_FW[source_line].offset;
+					reg = ptr_fw[source_line].offset;
 
-				memcpy(&buf[cur], &GSLX680_FW[source_line].val,
+				memcpy(&buf[cur], &ptr_fw[source_line].val,
 				       4);
 				cur += 4;
 
@@ -1214,6 +1233,15 @@ static void tpd_down(int id, int x, int y, int p)
 	}
 #endif
 
+	if (item_integer("touchpanel.x.reverse", 0)) {
+		if (TPD_RES_X > 0)
+			x = TPD_RES_X - 1 - x;
+	}
+	if (item_integer("touchpanel.y.reverse", 0)) {
+		if (TPD_RES_Y > 0)
+			y = TPD_RES_Y - 1 - y;
+	}
+
 	input_report_key(tpd->dev, BTN_TOUCH, 1);
 	input_report_abs(tpd->dev, ABS_MT_TOUCH_MAJOR, 1);
 	input_report_abs(tpd->dev, ABS_MT_POSITION_X, x);
@@ -1607,6 +1635,18 @@ static int tpd_i2c_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
 	int ret = 0;
+	char modle[64] = {0};
+
+	if (item_string(modle, "touchpanel.gsl.modle", sizeof(modle)) == 0) {
+		if (strstr(modle, "F716") || strstr(modle, "1680"))
+			gsl_use_f716_fw = 1;
+		else
+			gsl_use_f716_fw = 0;
+	} else if (IS_ENABLED(CONFIG_MACH_MT8168)) {
+		gsl_use_f716_fw = 1;
+	}
+	pr_info("gslX680: using %s firmware profile (model: %s)\n",
+		gsl_use_f716_fw ? "F716_GSL1680_WXGA" : "default", modle);
 
 	GSL_LOGF();
 	if (get_boot_mode() == RECOVERY_BOOT) {

@@ -67,6 +67,12 @@ config TOUCHSCREEN_MTK_GT1151
 
 source "drivers/input/touchscreen/mediatek/GT1151/Kconfig"
 
+config TOUCHSCREEN_BUTTON
+	bool "MediaTek Touchscreen Button Support"
+	default y
+	help
+	  Enable support for virtual touch buttons on touchscreens.
+
 config TOUCHSCREEN_MTK_GSLX680
 	bool "gslX680 for Mediatek package"
 	help
@@ -76,6 +82,13 @@ config TOUCHSCREEN_MTK_GSLX680
 
 	  you can config it if you want to use MTK9XX_LM for
 	  touch panel.
+
+config TOUCHSCREEN_MTK_GSLX68X
+	bool "gslX68X for Casper VIA S48 / F716"
+	default y
+	help
+	  Say Y here if you have Silead GSL1680 / GSLX68X touch panel.
+	  Supports Casper VIA S48 / F716 (GSL1680 WXGA).
 
 config TOUCHSCREEN_MTK_NT36xxx
 	bool "NT36xxx for Mediatek package"

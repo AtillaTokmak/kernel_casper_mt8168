@@ -898,6 +898,7 @@ struct LCM_DRIVER *lcm_driver_list[] = {
 
 #if defined(JD936X_WXGA_DSI_VDO)
 	&jd9366_wxga_dsi_vdo_fiti_kd_lcm_drv,
+	&f716_fx_ek79029_boe_wxga_ips_8_lcm_drv,
 #endif
 
 #if defined(S6D7AA0_WXGA_DSI_VDO)

@@ -42,23 +42,53 @@
 #endif
 #endif
 #include "lcm_drv.h"
+#include <mt-plat/items.h>
+#include "f716_fx_ek79029_boe_wxga_ips_8.h"
 
 #ifndef BUILD_LK
-static unsigned int GPIO_LCD_RST;
-static unsigned int GPIO_LCD_PWR_ENP;
-static unsigned int GPIO_LCD_PWR_ENN;
+static unsigned int GPIO_LCD_RST = -1;
+static unsigned int GPIO_LCD_PWR = -1;
+static unsigned int GPIO_LCD_VDD = -1;
+static unsigned int GPIO_LCD_PWR_ENP = -1;
+static unsigned int GPIO_LCD_PWR_ENN = -1;
 static struct regulator *lcm_vgp;
 
 void lcm_request_gpio_control(struct device *dev)
 {
-	GPIO_LCD_RST = of_get_named_gpio(dev->of_node, "gpio_lcd_rst", 0);
-	gpio_request(GPIO_LCD_RST, "GPIO_LCD_RST");
-	GPIO_LCD_PWR_ENP = of_get_named_gpio(dev->of_node,
-		"gpio_lcd_pwr_enp", 0);
-	gpio_request(GPIO_LCD_PWR_ENP, "GPIO_LCD_PWR_ENP");
-	GPIO_LCD_PWR_ENN = of_get_named_gpio(dev->of_node,
-		"gpio_lcd_pwr_enn", 0);
-	gpio_request(GPIO_LCD_PWR_ENN, "GPIO_LCD_PWR_ENN");
+	int gpio;
+
+	gpio = of_get_named_gpio(dev->of_node, "gpio_lcd_rst", 0);
+	if (gpio_is_valid(gpio)) {
+		GPIO_LCD_RST = gpio;
+		gpio_request(GPIO_LCD_RST, "GPIO_LCD_RST");
+	}
+
+	gpio = of_get_named_gpio(dev->of_node, "gpio_lcd_pwr", 0);
+	if (gpio_is_valid(gpio)) {
+		GPIO_LCD_PWR = gpio;
+		gpio_request(GPIO_LCD_PWR, "GPIO_LCD_PWR");
+	}
+
+	gpio = of_get_named_gpio(dev->of_node, "gpio_lcd_vdd", 0);
+	if (gpio_is_valid(gpio)) {
+		GPIO_LCD_VDD = gpio;
+		gpio_request(GPIO_LCD_VDD, "GPIO_LCD_VDD");
+	}
+
+	gpio = of_get_named_gpio(dev->of_node, "gpio_lcd_pwr_enp", 0);
+	if (gpio_is_valid(gpio)) {
+		GPIO_LCD_PWR_ENP = gpio;
+		gpio_request(GPIO_LCD_PWR_ENP, "GPIO_LCD_PWR_ENP");
+	}
+
+	gpio = of_get_named_gpio(dev->of_node, "gpio_lcd_pwr_enn", 0);
+	if (gpio_is_valid(gpio)) {
+		GPIO_LCD_PWR_ENN = gpio;
+		gpio_request(GPIO_LCD_PWR_ENN, "GPIO_LCD_PWR_ENN");
+	}
+
+	pr_info("LCM: request gpio: rst=%d, pwr=%d, vdd=%d, enp=%d, enn=%d\n",
+		GPIO_LCD_RST, GPIO_LCD_PWR, GPIO_LCD_VDD, GPIO_LCD_PWR_ENP, GPIO_LCD_PWR_ENN);
 }
 
 /* get LDO supply */
@@ -154,6 +184,9 @@ static const struct of_device_id lcm_platform_of_match[] = {
 	{
 		.compatible = "jd,jd936x",
 		.data = 0,
+	}, {
+		.compatible = "kd,mid-lcm",
+		.data = 1,
 	}, {
 		/* sentinel */
 	}
@@ -804,17 +837,34 @@ static void lcm_get_params(struct LCM_PARAMS *params)
 
 static void lcm_init(void)
 {
+	char lcm_name[64] = {0};
+
 	pr_notice("[Kernel/LCM] %s enter\n", __func__);
 
-	init_karnak_fiti_kd_lcm();
+	if (item_string(lcm_name, "LCM", sizeof(lcm_name)) == 0 &&
+	    (strstr(lcm_name, "ek79029") || strstr(lcm_name, "f716"))) {
+		init_f716_ek79029_lcm();
+	} else if (IS_ENABLED(CONFIG_MACH_MT8168)) {
+		init_f716_ek79029_lcm();
+	} else {
+		init_karnak_fiti_kd_lcm();
+	}
 }
 
 static void lcm_resume(void)
 {
+	char lcm_name[64] = {0};
+
 	pr_notice("[Kernel/LCM] %s enter\n", __func__);
 
-	init_karnak_fiti_kd_lcm(); /* TPV panel */
-
+	if (item_string(lcm_name, "LCM", sizeof(lcm_name)) == 0 &&
+	    (strstr(lcm_name, "ek79029") || strstr(lcm_name, "f716"))) {
+		init_f716_ek79029_lcm();
+	} else if (IS_ENABLED(CONFIG_MACH_MT8168)) {
+		init_f716_ek79029_lcm();
+	} else {
+		init_karnak_fiti_kd_lcm(); /* TPV panel */
+	}
 }
 
 static void lcm_init_power(void)
@@ -823,17 +873,26 @@ static void lcm_init_power(void)
 
 	lcm_vgp_supply_enable();
 	MDELAY(20);
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ONE);
+
+	if (gpio_is_valid(GPIO_LCD_PWR))
+		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_VDD))
+		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENP))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ONE);
 	MDELAY(10);
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENN))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ONE);
 	MDELAY(10);
 
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
-	MDELAY(10);
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
-	MDELAY(2);
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
-	MDELAY(5);
+	if (gpio_is_valid(GPIO_LCD_RST)) {
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(20);
+	}
 }
 
 static void lcm_resume_power(void)
@@ -841,17 +900,25 @@ static void lcm_resume_power(void)
 	pr_notice("[Kernel/LCM] %s enter\n", __func__);
 
 	lcm_vgp_supply_enable();
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_PWR))
+		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_VDD))
+		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENP))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ONE);
 	MDELAY(1);
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ONE);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENN))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ONE);
 	MDELAY(10);
 
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
-	MDELAY(10);
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
-	MDELAY(2);
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
-	MDELAY(5);
+	if (gpio_is_valid(GPIO_LCD_RST)) {
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(20);
+	}
 }
 
 static void lcm_suspend(void)
@@ -874,12 +941,19 @@ static void lcm_suspend_power(void)
 {
 	pr_notice("[Kernel/LCM] %s enter\n", __func__);
 
-	lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
+	if (gpio_is_valid(GPIO_LCD_RST))
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
 	MDELAY(10);
 
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ZERO);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENN))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENN, GPIO_OUT_ZERO);
 	MDELAY(3);
-	lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ZERO);
+	if (gpio_is_valid(GPIO_LCD_PWR_ENP))
+		lcm_set_gpio_output(GPIO_LCD_PWR_ENP, GPIO_OUT_ZERO);
+	if (gpio_is_valid(GPIO_LCD_VDD))
+		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ZERO);
+	if (gpio_is_valid(GPIO_LCD_PWR))
+		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ZERO);
 	MDELAY(5);
 	lcm_vgp_supply_disable();
 	MDELAY(10);
@@ -887,6 +961,18 @@ static void lcm_suspend_power(void)
 
 struct LCM_DRIVER jd9366_wxga_dsi_vdo_fiti_kd_lcm_drv = {
 	.name			= "jd9366_wxga_dsi_vdo_fiti_kd",
+	.set_util_funcs = lcm_set_util_funcs,
+	.get_params     = lcm_get_params,
+	.init           = lcm_init,
+	.init_power	= lcm_init_power,
+	.suspend        = lcm_suspend,
+	.resume         = lcm_resume,
+	.resume_power	= lcm_resume_power,
+	.suspend_power	= lcm_suspend_power,
+};
+
+struct LCM_DRIVER f716_fx_ek79029_boe_wxga_ips_8_lcm_drv = {
+	.name			= "f716_fx_ek79029_boe_wxga_ips_8",
 	.set_util_funcs = lcm_set_util_funcs,
 	.get_params     = lcm_get_params,
 	.init           = lcm_init,

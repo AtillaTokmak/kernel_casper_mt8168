@@ -26,3 +26,21 @@ source "drivers/misc/mediatek/sensors-1.0/accelerometer/stk8baxx/Kconfig"
 source "drivers/misc/mediatek/sensors-1.0/accelerometer/bmi160acc_yt/Kconfig"
 source "drivers/misc/mediatek/sensors-1.0/accelerometer/bmi160stc_yt/Kconfig"
 source "drivers/misc/mediatek/sensors-1.0/accelerometer/icm426xx_acc/Kconfig"
+
+config MTK_MIR3DA
+	bool "MiraMEMS mir3da accelerometer sensor"
+	depends on MTK_SENSOR_SUPPORT
+	help
+	  Say Y here to enable MiraMEMS mir3da accelerometer support.
+
+config MTK_MC34XX
+	bool "mCube mc34xx accelerometer sensor"
+	depends on MTK_SENSOR_SUPPORT
+	help
+	  Say Y here to enable mCube mc34xx accelerometer support.
+
+config MTK_SC7A20
+	bool "Silan sc7a20 accelerometer sensor"
+	depends on MTK_SENSOR_SUPPORT
+	help
+	  Say Y here to enable Silan sc7a20 accelerometer support.

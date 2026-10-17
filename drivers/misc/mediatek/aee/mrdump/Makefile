@@ -11,7 +11,7 @@
 # See http://www.gnu.org/licenses/gpl-2.0.html for more details.
 #
 
-subdir-ccflags-y += -Idrivers/misc/mediatek/mtprof/
+subdir-ccflags-y += -Idrivers/misc/mediatek/mtprof/ -I$(srctree)/drivers/misc/mediatek/aee/mrdump/ -I$(srctree)/drivers/misc/mediatek/include/mt-plat/ -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/
 
 ccflags-$(CONFIG_MTK_AEE_IPANIC) += -DTEXT_OFFSET=$(TEXT_OFFSET)
 obj-$(CONFIG_MTK_AEE_IPANIC)	+= mrdump.o

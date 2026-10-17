@@ -399,7 +399,8 @@ static struct charger_ops mt6390_charger_ops = {
 
 static void watchdog_int_handler(void)
 {
-	pr_notice("mt6390 CHRWDT IRQ\n");
+	pr_notice_ratelimited("mt6390 CHRWDT IRQ\n");
+	pmic_set_register_value(PMIC_RG_CHRWDT_WR, 1);
 }
 
 static int mt6390_charger_init_setting(struct mt6390_charger *info)
@@ -415,7 +416,7 @@ static int mt6390_charger_init_setting(struct mt6390_charger *info)
 #endif
 
 	pmic_set_register_value(PMIC_RG_CHRWDT_TD, 3);  /* 32s */
-	pmic_set_register_value(PMIC_RG_CHRWDT_EN, 1);
+	pmic_set_register_value(PMIC_RG_CHRWDT_EN, 0);
 	pmic_set_register_value(PMIC_RG_CHRWDT_WR, 1);
 
 #if 1 /* TODO: Default value */
@@ -441,7 +442,7 @@ static int mt6390_charger_init_setting(struct mt6390_charger *info)
 	/* TODO */
 
 	pmic_register_interrupt_callback(INT_WATCHDOG, watchdog_int_handler);
-	pmic_enable_interrupt(INT_WATCHDOG, 1, "PMIC");
+	pmic_enable_interrupt(INT_WATCHDOG, 0, "PMIC");
 
 	return ret;
 }
@@ -473,6 +474,8 @@ static int mt6390_charger_probe(struct platform_device *pdev)
 	dev_set_drvdata(&info->charger_dev->dev, info);
 
 	mt6390_charger_init_setting(info);
+
+	return 0;
 
 err_register_charger_dev:
 	devm_kfree(&pdev->dev, info);

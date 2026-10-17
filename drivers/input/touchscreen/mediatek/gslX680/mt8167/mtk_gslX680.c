@@ -1556,6 +1556,7 @@ static int tpd_registration(void *client)
 {
 	int ret = 0;
 	struct device_node *node = NULL;
+	unsigned long irq_flags = 0;
 
 	GSL_LOGF();
 	tpd_gpio_output(GTP_RST_PORT, 0);
@@ -1590,11 +1591,14 @@ static int tpd_registration(void *client)
 			 touch_irq);
 		touch_irq = irq_of_parse_and_map(node, 0);
 		GSL_LOGD("touch_irq = %d\n ", touch_irq);
+		irq_flags = irqd_get_trigger_type(irq_get_irq_data(touch_irq));
+		if (!irq_flags)
+			irq_flags = IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING;
+
 		ret = request_irq(touch_irq,
 				  (irq_handler_t)tpd_eint_interrupt_handler,
-				  IRQF_TRIGGER_RISING, TPD_DEVICE, NULL);
-		if (ret > 0) {
-			ret = -1;
+				  irq_flags, TPD_DEVICE, NULL);
+		if (ret < 0) {
 			GSL_LOGE(
 				" gslX680 -- error : tpd request_irq IRQ LINE NOT AVAILABLE!.\n");
 			return ret;

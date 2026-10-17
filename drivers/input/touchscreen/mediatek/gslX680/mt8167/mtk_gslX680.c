@@ -448,7 +448,7 @@ static void msg_dma_release(void)
 }
 static s32 i2c_dma_read(struct i2c_client *client, u8 addr, u8 *rxbuf, int len)
 {
-	int ret;
+	int ret = 0;
 	s32 retry = 0;
 	struct i2c_msg msg[2];
 
@@ -470,19 +470,21 @@ static s32 i2c_dma_read(struct i2c_client *client, u8 addr, u8 *rxbuf, int len)
 	/* GSL_LOGD("dma i2c read: 0x%04X, %d bytes(s)", addr, len); */
 	for (retry = 0; retry < 5; ++retry) {
 		ret = i2c_transfer(client->adapter, &msg[0], 2);
-		if (ret < 0)
-			continue;
-		memcpy(rxbuf, g_i2c_buff, len);
-		return 0;
+		if (ret == 2) {
+			memcpy(rxbuf, g_i2c_buff, len);
+			return 0;
+		}
+		pr_warn_ratelimited("[gsl-diag] i2c_dma_read addr=0x%02x len=%d try=%d ret=%d (expected 2)\n",
+				    addr, len, retry, ret);
 	}
-	GSL_LOGE("Dma I2C Read Error: 0x%4X, %d bytes, err-code: %d\n", addr,
-		 len, ret);
-	return ret;
+	pr_err("[gsl-diag] Dma I2C Read Error: addr=0x%02X, len=%d, last ret=%d\n",
+	       addr, len, ret);
+	return ret < 0 ? ret : -EIO;
 }
 
 static s32 i2c_dma_write(struct i2c_client *client, u8 addr, u8 *txbuf, s32 len)
 {
-	int ret;
+	int ret = 0;
 	s32 retry = 0;
 	struct i2c_msg msg;
 
@@ -501,13 +503,14 @@ static s32 i2c_dma_write(struct i2c_client *client, u8 addr, u8 *txbuf, s32 len)
 	memcpy(g_i2c_buff + 1, txbuf, len);
 	for (retry = 0; retry < 5; ++retry) {
 		ret = i2c_transfer(client->adapter, &msg, 1);
-		if (ret < 0)
-			continue;
-		return 0;
+		if (ret == 1)
+			return 0;
+		pr_warn_ratelimited("[gsl-diag] i2c_dma_write addr=0x%02x len=%d try=%d ret=%d (expected 1)\n",
+				    addr, len, retry, ret);
 	}
-	GSL_LOGE("Dma I2C Write Error: 0x%04X, %d bytes, err-code: %d\n", addr,
-		 len, ret);
-	return ret;
+	pr_err("[gsl-diag] Dma I2C Write Error: addr=0x%02X, len=%d, last ret=%d\n",
+	       addr, len, ret);
+	return ret < 0 ? ret : -EIO;
 }
 #endif
 
@@ -855,13 +858,13 @@ static int power_check(struct i2c_client *client)
 	GSL_LOGF();
 	gsl_i2c_read_bytes(client, 0xb0, read_buf, sizeof(read_buf));
 	gsl_i2c_read_bytes(client, 0xb0, read_buf, sizeof(read_buf));
-	GSL_LOGD(" 0xb0 is %02x%02x%02x%02x\n", read_buf[3], read_buf[2],
-		 read_buf[1], read_buf[0]);
 	if (read_buf[3] != 0x5a || read_buf[2] != 0x5a || read_buf[1] != 0x5a ||
 	    read_buf[0] != 0x5a) {
 		result = power_shutdowned;
-		GSL_LOGE(" 0xb0 is %02x%02x%02x%02x\n", read_buf[3],
-			 read_buf[2], read_buf[1], read_buf[0]);
+		pr_warn_ratelimited("[gsl-diag] power_check(0xb0) FAIL: read %02x %02x %02x %02x (expected 5a 5a 5a 5a)\n",
+				    read_buf[3], read_buf[2], read_buf[1], read_buf[0]);
+	} else {
+		pr_info_ratelimited("[gsl-diag] power_check(0xb0) PASS: 5a 5a 5a 5a\n");
 	}
 	return result;
 }
@@ -886,10 +889,12 @@ static int interrupt_check(struct i2c_client *client)
 	}
 	result = arry_compare(arry_1st, arry_2nd, num);
 	if (!result) {
-		GSL_LOGE(" 0xb4 is %02x%02x%02x%02x\n", read_buf[3],
-			 read_buf[2], read_buf[1], read_buf[0]);
+		pr_warn_ratelimited("[gsl-diag] interrupt_check(0xb4) FAIL: 1st=%02x%02x%02x%02x == 2nd=%02x%02x%02x%02x\n",
+				    arry_1st[3], arry_1st[2], arry_1st[1], arry_1st[0],
+				    arry_2nd[3], arry_2nd[2], arry_2nd[1], arry_2nd[0]);
 		result = interrupt_status;
 	} else {
+		pr_info_ratelimited("[gsl-diag] interrupt_check(0xb4) PASS: diff detected (%d)\n", result);
 		result = 0;
 	}
 	return result;
@@ -903,13 +908,13 @@ static int esd_check(struct i2c_client *client)
 	GSL_LOGF();
 	gsl_i2c_read_bytes(client, 0xbc, read_buf, sizeof(read_buf));
 	gsl_i2c_read_bytes(client, 0xbc, read_buf, sizeof(read_buf));
-	GSL_LOGD(" 0xbc is %02x%02x%02x%02x\n", read_buf[3], read_buf[2],
-		 read_buf[1], read_buf[0]);
 	if (read_buf[3] != 0x00 || read_buf[2] != 0x00 || read_buf[1] != 0x00 ||
 	    read_buf[0] != 0x00) {
 		result = esd_protected;
-		GSL_LOGE(" 0xbc is %02x%02x%02x%02x\n", read_buf[3],
-			 read_buf[2], read_buf[1], read_buf[0]);
+		pr_warn_ratelimited("[gsl-diag] esd_check(0xbc) FAIL: read %02x %02x %02x %02x (expected 00 00 00 00)\n",
+				    read_buf[3], read_buf[2], read_buf[1], read_buf[0]);
+	} else {
+		pr_info_ratelimited("[gsl-diag] esd_check(0xbc) PASS: 00 00 00 00\n");
 	}
 	return result;
 }
@@ -1291,6 +1296,7 @@ static void report_data_handle(void)
 	u8 touch_data[44] = {0};
 	unsigned char point_num = 0;
 	unsigned int temp_a, temp_b, i;
+	int r_ret = 0;
 #ifdef GSL_NOID_VERSION
 	u8 buf[4] = {0};
 	struct gsl_touch_info cinfo = {{0} };
@@ -1307,8 +1313,10 @@ static void report_data_handle(void)
 		return;
 #endif
 
-	gsl_i2c_read_bytes(i2c_client, 0x80, &touch_data[0], 4);
+	r_ret = gsl_i2c_read_bytes(i2c_client, 0x80, &touch_data[0], 4);
 	point_num = touch_data[0];
+	pr_info_ratelimited("[gsl-diag] 0x80 read: ret=%d raw=[%02x %02x %02x %02x] point_num=%d lock=%d\n",
+			    r_ret, touch_data[0], touch_data[1], touch_data[2], touch_data[3], point_num, i2c_lock_flag);
 	if (point_num > 0)
 		gsl_i2c_read_bytes(i2c_client, 0x84, &touch_data[4], 4);
 	if (point_num > 1)
@@ -1368,6 +1376,10 @@ static void report_data_handle(void)
 	}
 	point_num = cinfo.finger_num;
 #endif
+	if (cinfo.finger_num > 0) {
+		pr_info_ratelimited("[gsl-diag] touch detected: finger_num=%d p0=(x=%d, y=%d, id=%d)\n",
+				    cinfo.finger_num, cinfo.x[0], cinfo.y[0], cinfo.id[0]);
+	}
 	gsl_report_point(&cinfo);
 }
 
@@ -1389,15 +1401,15 @@ static void gsl_monitor_worker(struct work_struct *work)
 			(power_status + interrupt_status + esd_scanning));
 		if (!result)
 			check_result_flag++;
-		GSL_LOGD(
-			"--result num is[%d] check_result_flag[%d] check_times[%d] check_result_flag[%d]\n",
-			result, check_result_flag, check_times,
-			check_result_flag);
+		pr_info_ratelimited("[gsl-diag] monitor_worker: check_mode result=%d (times=%d, result_flag=%d)\n",
+				    result, check_times, check_result_flag);
 		if (check_times >= check_etv) {
 			if (!check_result_flag) {
-				i2c_lock_flag = 2; /* ready fw restore */
-				init_chip(i2c_client);
-				i2c_lock_flag = 0; /*restore end */
+				pr_warn_ratelimited("[gsl-diag] monitor_worker: check_result_flag=0 (ESD failure), reset SUPPRESSED for diagnosis!\n");
+				/* For diagnosis: do not reset chip / do not enter reset loop */
+				/* i2c_lock_flag = 2; */
+				/* init_chip(i2c_client); */
+				/* i2c_lock_flag = 0; */
 			}
 			check_times = 0;
 			check_result_flag = 0;
@@ -1502,7 +1514,7 @@ static int touch_event_handler(void *unused)
 		tpd_flag = 0;
 		TPD_DEBUG_SET_TIME;
 		set_current_state(TASK_RUNNING);
-		GSL_LOGD("===%s, task running===\n", __func__);
+		pr_info_ratelimited("[gsl-diag] touch thread awakened, calling report_data_handle()\n");
 
 		report_data_handle();
 	} while (!kthread_should_stop());
@@ -1512,6 +1524,7 @@ static int touch_event_handler(void *unused)
 
 static irqreturn_t tpd_eint_interrupt_handler(void)
 {
+	pr_info_ratelimited("[gsl-diag] tpd_eint_interrupt_handler triggered\n");
 	tpd_flag = 1;
 	wake_up_interruptible(&waiter);
 

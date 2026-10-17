@@ -11,13 +11,17 @@
 # GNU General Public License for more details.
 #
 
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+
 obj-y += layering_rule_base.o
 
 ccflags-y += \
                                 -I$(srctree)/drivers/misc/mediatek/video/include     \
+                                -I$(srctree)/drivers/misc/mediatek/video/common/layering_rule_base/v1.1 \
                                 -I$(srctree)/drivers/misc/mediatek/video/common/IPv1     \
                                 -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/dispsys \
                                 -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/videox \
+                                -I$(srctree)/drivers/misc/mediatek/mmp/ \
                                 -I$(srctree)/drivers/misc/mediatek/sync/      \
                                 -I$(srctree)/drivers/misc/mediatek/lcm/inc/ \
 

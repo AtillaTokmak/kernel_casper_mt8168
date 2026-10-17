@@ -11,6 +11,8 @@
 # GNU General Public License for more details.
 #
 
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+
 # drivers/dispsys
 
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/ \
@@ -19,6 +21,7 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/ \
              -I$(srctree)/drivers/misc/mediatek/video/common/wdma20/ \
              -I$(srctree)/drivers/misc/mediatek/video/common/layering_rule_base/v1.1/ \
              -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/videox/ \
+             -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/dispsys/ \
              -I$(srctree)/drivers/misc/mediatek/base/power/include/ \
              -I$(srctree)/drivers/misc/mediatek/smi/ \
              -I$(srctree)/drivers/misc/mediatek/gpu/ged/include/ \

@@ -11,11 +11,16 @@
 # GNU General Public License for more details.
 #
 
-################################################################################
-# FrameBuffer Driver for Display
-#
-#
-################################################################################
+MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/video/include/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/common/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/common/rdma20/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/common/wdma20/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/common/layering_rule_base/v1.1/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/dispsys/ \
+                    -I$(srctree)/drivers/misc/mediatek/video/$(MTK_PLATFORM)/videox/ \
+                    -I$(srctree)/drivers/misc/mediatek/mmp/
 
 ifneq ($(CONFIG_MTK_LCM), y)
 	obj-y += mtdummy/

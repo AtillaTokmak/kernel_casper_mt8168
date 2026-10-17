@@ -24,6 +24,8 @@ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/cmdq/v3/$(MTK_PLATFORM)/
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)/
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/ext_disp/include/
 subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/ext_disp/$(MTK_PLATFORM)/
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/freqhopping/
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/freqhopping/$(MTK_PLATFORM)/
 
 obj-$(CONFIG_MTK_EMI) += emi/
 obj-$(CONFIG_MTK_EMI_BWL)	+= emi_bwl/

@@ -13,4 +13,4 @@
 obj-y += common/
 obj-y += $(subst ",,$(CONFIG_MTK_PLATFORM))/
 
-subdir-ccflags-y += -I$(src)/common/
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/hifidsp_audio_ipi/common/ -I$(srctree)/drivers/misc/mediatek/hifidsp_audio_ipi/common/framework/

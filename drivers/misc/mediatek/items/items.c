@@ -125,13 +125,15 @@ static void items_parse_buffer(char *buf, size_t len)
 			v++;
 
 		/* remove trailing comments or whitespace */
-		p = v;
-		while (*p && *p != '#')
-			p++;
-		*p = '\0';
-		while (p > v && (*(p - 1) == ' ' || *(p - 1) == '\t')) {
-			p--;
-			*p = '\0';
+		{
+			char *end = v;
+			while (*end && *end != '#')
+				end++;
+			*end = '\0';
+			while (end > v && (*(end - 1) == ' ' || *(end - 1) == '\t')) {
+				end--;
+				*end = '\0';
+			}
 		}
 
 		items_add_entry(k, v);
@@ -247,10 +249,14 @@ static int __init items_init(void)
 	np = of_find_node_by_name(NULL, "items_reserved_mem");
 	if (np) {
 		reg = of_get_property(np, "reg", &len);
-		if (reg && len >= 8) {
-			phys_addr_t base = of_read_number(reg, 2);
-			size_t size = of_read_number(reg + 2, 2);
-			void *va;
+		if (reg) {
+			int na = of_n_addr_cells(np);
+			int ns = of_n_size_cells(np);
+
+			if (len >= (na + ns) * (int)sizeof(u32)) {
+				phys_addr_t base = of_read_number(reg, na);
+				size_t size = of_read_number(reg + na, ns);
+				void *va;
 
 			pr_info("[PHY layout]items_reserved_mem   :   0x%08llx - 0x%08llx (0x%llx)\n",
 				(u64)base, (u64)(base + size), (u64)size);
@@ -269,6 +275,7 @@ static int __init items_init(void)
 					memunmap(va);
 				}
 			}
+		}
 		}
 		of_node_put(np);
 	}

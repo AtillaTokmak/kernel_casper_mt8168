@@ -971,16 +971,92 @@ struct LCM_DRIVER jd9366_wxga_dsi_vdo_fiti_kd_lcm_drv = {
 	.suspend_power	= lcm_suspend_power,
 };
 
+static void f716_lcm_get_params(struct LCM_PARAMS *params)
+{
+	memset(params, 0, sizeof(struct LCM_PARAMS));
+
+	params->type   = LCM_TYPE_DSI;
+	params->width  = FRAME_WIDTH;
+	params->height = FRAME_HEIGHT;
+	params->dsi.mode   = SYNC_PULSE_VDO_MODE;
+
+	params->dsi.LANE_NUM				= LCM_FOUR_LANE;
+	params->dsi.data_format.color_order = LCM_COLOR_ORDER_RGB;
+	params->dsi.data_format.trans_seq   = LCM_DSI_TRANS_SEQ_MSB_FIRST;
+	params->dsi.data_format.padding     = LCM_DSI_PADDING_ON_LSB;
+	params->dsi.data_format.format      = LCM_DSI_FORMAT_RGB888;
+
+	params->dsi.packet_size = 256;
+	params->dsi.intermediat_buffer_num = 0;
+	params->dsi.PS = LCM_PACKED_PS_24BIT_RGB888;
+
+	/* Timing values strictly decompiled from Casper VIA S48 stock-Image */
+	params->dsi.vertical_sync_active		= 2;
+	params->dsi.vertical_backporch			= 10;
+	params->dsi.vertical_frontporch			= 12;
+	params->dsi.vertical_active_line		= FRAME_HEIGHT;
+
+	params->dsi.horizontal_sync_active		= 25;
+	params->dsi.horizontal_backporch		= 25;
+	params->dsi.horizontal_frontporch		= 25;
+	params->dsi.horizontal_active_pixel		= FRAME_WIDTH;
+
+	params->dsi.PLL_CLOCK = 205;
+	params->dsi.clk_lp_per_line_enable = 1;
+}
+
+static void f716_lcm_init_power(void)
+{
+	pr_notice("[Kernel/LCM] %s enter (F716 stock power sequence)\n", __func__);
+
+	lcm_vgp_supply_enable();
+	if (gpio_is_valid(GPIO_LCD_PWR)) {
+		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ONE);
+		MDELAY(10);
+	}
+	if (gpio_is_valid(GPIO_LCD_VDD)) {
+		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ONE);
+		MDELAY(20);
+	}
+	if (gpio_is_valid(GPIO_LCD_RST)) {
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
+		MDELAY(20);
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
+		MDELAY(100);
+	}
+}
+
+static void f716_lcm_suspend_power(void)
+{
+	pr_notice("[Kernel/LCM] %s enter (F716 stock power sequence)\n", __func__);
+
+	if (gpio_is_valid(GPIO_LCD_RST)) {
+		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
+		MDELAY(10);
+	}
+	if (gpio_is_valid(GPIO_LCD_PWR)) {
+		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ZERO);
+		MDELAY(10);
+	}
+	if (gpio_is_valid(GPIO_LCD_VDD)) {
+		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ZERO);
+		MDELAY(80);
+	}
+	lcm_vgp_supply_disable();
+}
+
 struct LCM_DRIVER f716_fx_ek79029_boe_wxga_ips_8_lcm_drv = {
 	.name			= "f716_fx_ek79029_boe_wxga_ips_8",
 	.set_util_funcs = lcm_set_util_funcs,
-	.get_params     = lcm_get_params,
+	.get_params     = f716_lcm_get_params,
 	.init           = lcm_init,
-	.init_power	= lcm_init_power,
+	.init_power	= f716_lcm_init_power,
 	.suspend        = lcm_suspend,
 	.resume         = lcm_resume,
-	.resume_power	= lcm_resume_power,
-	.suspend_power	= lcm_suspend_power,
+	.resume_power	= f716_lcm_init_power,
+	.suspend_power	= f716_lcm_suspend_power,
 };
 
 

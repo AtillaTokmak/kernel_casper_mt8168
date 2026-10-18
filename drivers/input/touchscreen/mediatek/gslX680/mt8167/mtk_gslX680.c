@@ -563,6 +563,103 @@ static int test_i2c(struct i2c_client *client)
 	return 0;
 }
 
+static int gsl_adjust_freq(struct i2c_client *client)
+{
+	u32 cpu_start, cpu_end, time_ticks, diff, val;
+	struct timeval tv_start, tv_end;
+	u8 buf[4];
+	int i;
+
+	pr_info("gsl pen test\n");
+
+	buf[0] = 0x00;
+	buf[1] = 0x02;
+	buf[2] = 0xfe;
+	buf[3] = 0x01;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	buf[0] = 0x00;
+	buf[1] = 0x00;
+	buf[2] = 0x00;
+	buf[3] = 0x00;
+	gsl_write_interface(client, 0x0c, buf, 4);
+
+	buf[0] = 0x00;
+	buf[1] = 0x02;
+	buf[2] = 0xfe;
+	buf[3] = 0x01;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	buf[0] = 0xff;
+	buf[1] = 0xff;
+	buf[2] = 0xff;
+	buf[3] = 0xff;
+	gsl_write_interface(client, 0x04, buf, 4);
+
+	buf[0] = 0x00;
+	buf[1] = 0x02;
+	buf[2] = 0xfe;
+	buf[3] = 0x01;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	buf[0] = 0x09;
+	buf[1] = 0x00;
+	buf[2] = 0x00;
+	buf[3] = 0x00;
+	gsl_write_interface(client, 0x08, buf, 4);
+
+	for (i = 0; i < 200; i++)
+		udelay(1000);
+
+	buf[0] = 0x00;
+	buf[1] = 0x02;
+	buf[2] = 0xfe;
+	buf[3] = 0x01;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	gsl_read_interface(client, 0x00, buf, 4);
+	gsl_read_interface(client, 0x00, buf, 4);
+	cpu_start = ((u32)buf[3] << 24) | ((u32)buf[2] << 16) |
+		    ((u32)buf[1] << 8) | buf[0];
+	do_gettimeofday(&tv_start);
+
+	for (i = 0; i < 1200; i++)
+		udelay(1000);
+
+	buf[0] = 0x00;
+	buf[1] = 0x02;
+	buf[2] = 0xfe;
+	buf[3] = 0x01;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	gsl_read_interface(client, 0x00, buf, 4);
+	gsl_read_interface(client, 0x00, buf, 4);
+	cpu_end = ((u32)buf[3] << 24) | ((u32)buf[2] << 16) |
+		  ((u32)buf[1] << 8) | buf[0];
+	do_gettimeofday(&tv_end);
+
+	time_ticks = (tv_end.tv_sec - tv_start.tv_sec) * 10000 +
+		     (tv_end.tv_usec - tv_start.tv_usec) / 100;
+	if (time_ticks <= 10000)
+		return 0;
+
+	diff = (cpu_start - cpu_end) * 100 / time_ticks;
+	val = (u32)(((u64)(diff << 12) * 0xe2d77d15ULL) >> 45);
+	pr_info("[gsl-diag] SL_Adjust_Freq: cpu_start=0x%08x cpu_end=0x%08x time_ticks=%u diff=%u val=0x%08x\n",
+		cpu_start, cpu_end, time_ticks, diff, val);
+
+	if ((u32)((diff << 12) + 0xfedf1800U) > 0x0362dc1cU)
+		return -1;
+
+	buf[0] = 0x03;
+	buf[1] = 0x00;
+	buf[2] = 0x00;
+	buf[3] = 0x00;
+	gsl_write_interface(client, 0xf0, buf, 4);
+	buf[0] = (u8)(val & 0xff);
+	buf[1] = (u8)((val >> 8) & 0xff);
+	buf[2] = (u8)((val >> 16) & 0xff);
+	buf[3] = (u8)((val >> 24) & 0xff);
+	gsl_write_interface(client, 0x7c, buf, 4);
+
+	return 0;
+}
+
 static int init_chip(struct i2c_client *client)
 {
 	int rc;
@@ -590,6 +687,11 @@ static int init_chip(struct i2c_client *client)
 	gsl_load_fw(client);
 
 	startup_chip(client);
+
+	if (gsl_adjust_freq(client) < 0) {
+		pr_warn("-------------SL_Adjust_Freq error -------------------\n");
+		gsl_adjust_freq(client);
+	}
 
 	reset_chip(client);
 
@@ -1141,7 +1243,7 @@ static int tpd_registration(void *client)
 
 	GSL_LOGF();
 	tpd_gpio_output(GTP_RST_PORT, 0);
-	/*	msleep(100); */
+	msleep(100);
 
 	ret = regulator_enable(tpd->reg);
 	if (ret != 0) {
@@ -1149,10 +1251,10 @@ static int tpd_registration(void *client)
 		return -1;
 	}
 
-	/*	msleep(100); */
+	msleep(100);
 	tpd_gpio_output(GTP_RST_PORT, 1);
 	tpd_gpio_as_int(GTP_INT_PORT);
-	/*	msleep(50); */
+	msleep(50);
 
 	i2c_client = client;
 	ret = init_chip(i2c_client);

@@ -1,0 +1,35 @@
+# Build output
+out/
+build_out/
+*.o
+*.ko
+*.mod.c
+*.mod.o
+*.order
+*.builtin
+*.symvers
+*.cmd
+.tmp_versions/
+built-in.a
+
+# Kernel generated files
+.config
+.config.old
+.version
+Module.symvers
+modules.order
+System.map
+include/config/
+include/generated/
+arch/arm64/boot/Image
+arch/arm64/boot/Image.gz
+arch/arm64/boot/Image.gz-dtb
+arch/arm64/boot/dts/mediatek/*.dtb
+arch/arm64/boot/dts/mediatek/*.dtbo
+
+# Editor and OS files
+*.swp
+*~
+.DS_Store
+.idea/
+.vscode/

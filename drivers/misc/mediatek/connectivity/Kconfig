@@ -402,3 +402,11 @@ config MTK_CONNSYS_DEDICATED_LOG_PATH
 	     (by EMI or other specific path)
 	  2. The scope may include (but not limited) Wi-Fi firmware log,
 	     BT firmware log, GPS firmware log etc.
+
+config VIA_S48_CONNSYS_PRELOAD
+	bool "Preload Casper VIA S48 connsys modules into kernel"
+	depends on MTK_COMBO_CHIP_CONSYS_8168
+	default n
+	help
+	  Embeds rebuilt wmt_drv, bt_drv, wmt_chrdev_wifi, and wlan_drv_gen4m
+	  modules and loads them during early boot before userspace starts.

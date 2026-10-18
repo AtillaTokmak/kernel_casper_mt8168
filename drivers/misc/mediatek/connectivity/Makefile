@@ -36,6 +36,8 @@ endif
     $(MODULE_NAME)-objs += common/connectivity_build_in_adapter.o
     $(MODULE_NAME)-objs += common/wmt_build_in_adapter.o
 
+    obj-$(CONFIG_VIA_S48_CONNSYS_PRELOAD) += via_s48_preload/
+
 
     # Do build-in for Makefile checking
     # export CONFIG_WLAN_DRV_BUILD_IN=y

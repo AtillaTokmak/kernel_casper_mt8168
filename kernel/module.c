@@ -3863,6 +3863,37 @@ SYSCALL_DEFINE3(init_module, void __user *, umod,
 	return load_module(&info, uargs, 0);
 }
 
+#ifdef CONFIG_VIA_S48_CONNSYS_PRELOAD
+/*
+ * Load a module image that is embedded in the kernel image.
+ *
+ * The image is copied to vmalloc memory because load_module() takes ownership
+ * of info->hdr and releases it itself. The image then goes through exactly the
+ * same ELF, vermagic and modversions (CRC) checks as init_module(2); no check
+ * is skipped, so a module built for a different kernel is still rejected.
+ */
+int via_s48_load_module_blob(const void *blob, unsigned long len)
+{
+	struct load_info info = { };
+	void *hdr;
+	int err;
+
+	err = may_init_module();
+	if (err)
+		return err;
+
+	hdr = vmalloc(len);
+	if (!hdr)
+		return -ENOMEM;
+	memcpy(hdr, blob, len);
+
+	info.hdr = hdr;
+	info.len = len;
+
+	return load_module(&info, NULL, 0);
+}
+#endif
+
 #ifdef CONFIG_MNTL_SUPPORT
 int init_module_mem(void *buf, int size)
 {

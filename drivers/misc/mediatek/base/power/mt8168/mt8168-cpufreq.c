@@ -714,6 +714,13 @@ static int mtk_cpufreq_init(struct cpufreq_policy *policy)
 		dev_pm_opp_add(info->cpu_dev,  941000000ul,  675000ul);
 	}
 
+	/* Overclock: Add 2.100 GHz (2100000000 Hz) OPP with stock max safe voltage 1025000 uV */
+	ret = dev_pm_opp_add(info->cpu_dev, 2100000000ul, 1025000ul);
+	if (ret && ret != -EEXIST)
+		pr_warn("%s: failed to add 2.100 GHz OPP: %d\n", __func__, ret);
+	else
+		pr_info("%s: 2.100 GHz (2100000 kHz) OPP registered at 1025 mV\n", __func__);
+
 	ret = dev_pm_opp_init_cpufreq_table(info->cpu_dev, &freq_table);
 	if (ret) {
 		pr_err("failed to init cpufreq table for cpu%d: %d\n",

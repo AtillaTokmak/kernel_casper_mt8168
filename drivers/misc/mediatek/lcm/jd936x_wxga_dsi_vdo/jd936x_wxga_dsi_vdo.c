@@ -1007,11 +1007,10 @@ static void f716_lcm_get_params(struct LCM_PARAMS *params)
 	params->dsi.clk_lp_per_line_enable = 1;
 }
 
-static void f716_lcm_init_power(void)
+static void f716_lcm_init(void)
 {
-	pr_notice("[Kernel/LCM] %s enter (F716 stock power sequence)\n", __func__);
+	pr_notice("[Kernel/LCM] %s enter (F716 stock sequence)\n", __func__);
 
-	lcm_vgp_supply_enable();
 	if (gpio_is_valid(GPIO_LCD_PWR)) {
 		lcm_set_gpio_output(GPIO_LCD_PWR, GPIO_OUT_ONE);
 		MDELAY(10);
@@ -1028,11 +1027,16 @@ static void f716_lcm_init_power(void)
 		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ONE);
 		MDELAY(100);
 	}
+
+	init_f716_ek79029_lcm();
 }
 
-static void f716_lcm_suspend_power(void)
+static void f716_lcm_suspend(void)
 {
-	pr_notice("[Kernel/LCM] %s enter (F716 stock power sequence)\n", __func__);
+	pr_notice("[Kernel/LCM] %s enter (F716 stock sequence)\n", __func__);
+
+	MDELAY(30);
+	MDELAY(120);
 
 	if (gpio_is_valid(GPIO_LCD_RST)) {
 		lcm_set_gpio_output(GPIO_LCD_RST, GPIO_OUT_ZERO);
@@ -1046,19 +1050,22 @@ static void f716_lcm_suspend_power(void)
 		lcm_set_gpio_output(GPIO_LCD_VDD, GPIO_OUT_ZERO);
 		MDELAY(80);
 	}
-	lcm_vgp_supply_disable();
+}
+
+static void f716_lcm_resume(void)
+{
+	pr_notice("[Kernel/LCM] %s enter (F716 stock sequence)\n", __func__);
+
+	f716_lcm_init();
 }
 
 struct LCM_DRIVER f716_fx_ek79029_boe_wxga_ips_8_lcm_drv = {
 	.name			= "f716_fx_ek79029_boe_wxga_ips_8",
 	.set_util_funcs = lcm_set_util_funcs,
 	.get_params     = f716_lcm_get_params,
-	.init           = lcm_init,
-	.init_power	= f716_lcm_init_power,
-	.suspend        = lcm_suspend,
-	.resume         = lcm_resume,
-	.resume_power	= f716_lcm_init_power,
-	.suspend_power	= f716_lcm_suspend_power,
+	.init           = f716_lcm_init,
+	.suspend        = f716_lcm_suspend,
+	.resume         = f716_lcm_resume,
 };
 
 

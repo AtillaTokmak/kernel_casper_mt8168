@@ -18,7 +18,7 @@ static unsigned long clipped_freq = -1;
 static unsigned int limited_max_ncpu;
 static unsigned int limited_max_freq;
 
-#define NR_MAX_OPP_TBL  16
+#define NR_MAX_OPP_TBL  32
 #define NR_MAX_CPU      4
 
 struct mt_cpu_power_info {
@@ -108,22 +108,14 @@ struct mt_cpu_dvfs {
 static struct mt_cpu_dvfs cpu_dvfs;
 
 struct mt_cpu_freq_info opp_tbl_default[] = {
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
-	OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
+	OP(0, 0), OP(0, 0), OP(0, 0), OP(0, 0),
 };
 
 static void _power_calculation(struct mt_cpu_dvfs *p, int oppidx, int ncpu)
@@ -170,8 +162,16 @@ static void _power_calculation(struct mt_cpu_dvfs *p, int oppidx, int ncpu)
 
 static void init_mt_cpu_dvfs(struct mt_cpu_dvfs *p)
 {
-	p->nr_opp_tbl = ARRAY_SIZE(opp_tbl_default);
+	int i;
+
 	p->opp_tbl = opp_tbl_default;
+	p->nr_opp_tbl = 0;
+	for (i = 0; i < ARRAY_SIZE(opp_tbl_default); i++) {
+		if (opp_tbl_default[i].cpufreq_khz != 0)
+			p->nr_opp_tbl++;
+		else
+			break;
+	}
 }
 
 void dump_power_table(void)

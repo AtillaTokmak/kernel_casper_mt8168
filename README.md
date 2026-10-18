@@ -89,3 +89,5 @@ setprop persist.sys.bt.unsupported.commands "182,174"
 
 ## License
 Kernel sources, device trees, and drivers are licensed under the **GNU General Public License v2.0 (GPL-2.0)** matching the upstream Linux kernel. See `COPYING` for details.
+
+Based on the original kernel work by Zhiqin Chen.

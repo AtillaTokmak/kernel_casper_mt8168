@@ -209,6 +209,21 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
+#if defined(GC2385SUB_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_GC2385SUB_MIPI_RAW,
+		{
+			{SensorMCLK, Vol_High, 0},
+			{PDN, Vol_High, 0},
+			{RST, Vol_Low, 0},
+			{DOVDD, Vol_1800, 1},
+			{DVDD, Vol_1200, 5},
+			{AVDD, Vol_2800, 5},
+			{PDN, Vol_Low, 1},
+			{RST, Vol_High, 2}
+		},
+	},
+#endif
 /* GC */
 #if defined(GC2385MIPI_RAW_CHXT_REAR)
 	{

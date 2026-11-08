@@ -760,6 +760,10 @@ struct IMGSENSOR_INIT_FUNC_LIST kdSensorList[MAX_NUM_OF_SUPPORT_SENSOR] = {
 	{GC5025MIPI_SENSOR_ID, SENSOR_DRVNAME_GC5025_MIPI_RAW,
 		GC5025MIPI_RAW_SensorInit},
 #endif
+#if defined(GC2385SUB_MIPI_RAW)
+	{GC2385SUBMIPI_SENSOR_ID, SENSOR_DRVNAME_GC2385SUB_MIPI_RAW,
+		GC2385SUB_MIPI_RAW_SensorInit},
+#endif
 	/*  ADD sensor driver before this line */
 	{0, {0}, NULL}, /* end of list */
 };

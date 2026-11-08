@@ -555,6 +555,9 @@ void KD_IMGSENSOR_PROFILE_I2C(char *tag, int trans_num);
 /* 1300w */
 #define GC5025MIPI_SENSOR_ID                0x5025
 #define SENSOR_DRVNAME_GC5025_MIPI_RAW      "gc5025_mipi_raw"
+/* 200w */
+#define GC2385SUBMIPI_SENSOR_ID             0x2386
+#define SENSOR_DRVNAME_GC2385SUB_MIPI_RAW   "gc2385sub_mipi_raw"
 #define mDELAY(ms)     mdelay(ms)
 #define uDELAY(us)       udelay(us)
 #endif              /* _KD_IMGSENSOR_H */

@@ -126,6 +126,11 @@
 				pinctrl-2 = <0x13>;
 				status = "okay";
 				phandle = <0x44>;
+				channel@0 {
+					type = <0>;
+					ct = <0>;
+					part = <0>;
+				};
 			};
 		};
 	};

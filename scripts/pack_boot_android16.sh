@@ -41,6 +41,9 @@ if [[ ! -f "${KERNEL_BIN}" ]] || [[ ! -f "${DTB_BIN}" ]] || [[ ! -f "${RAMDISK_G
     exit 1
 fi
 
+echo "[*] Verifying input DTB integrity before packaging..."
+python3 "${REPO_ROOT}/scripts/verify_dtb_integrity.py" "${DTB_BIN}"
+
 echo "=========================================================="
 echo " Packaging Android 16 Boot Image (Header v2 + DFE)"
 echo " Kernel:  ${KERNEL_BIN}"
@@ -66,6 +69,9 @@ mkbootimg \
     --cmdline "bootopt=64S3,32N2,64N2 buildvariant=user androidboot.selinux=permissive" \
     -o "${OUTPUT_BOOT}"
 
-echo "SUCCESS: Boot image created."
+echo "[*] Verifying output boot image DTB integrity..."
+python3 "${REPO_ROOT}/scripts/verify_dtb_integrity.py" "${OUTPUT_BOOT}"
+
+echo "SUCCESS: Boot image created and verified."
 ls -lh "${OUTPUT_BOOT}"
 sha256sum "${OUTPUT_BOOT}"

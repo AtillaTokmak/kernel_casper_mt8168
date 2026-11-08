@@ -11,7 +11,9 @@ This document records the exact SHA-256 hashes, component breakdowns, and differ
 | **Stock `boot.img`** | 33,554,432 | `bc31d5e1ca609631502d5ecc53ce9d9db45838d8ad7346d6a74f2dc436e3c311` | Official Casper C1.03 firmware release |
 | **`boot_via_s48_32m_oc_2.1ghz_standard.img`** | 33,554,432 | `70584943aa85f80fb0b8aa707fdd35fcf99541f6ce6dc3893f07096963c9d3c9` | Reference 2.1 GHz kernel + stock ramdisk |
 | **`boot_gsi.img`** | 10,131,456 | `1365822690a638c1947183e18a9ba38b03c2d7cd3c9342f14055ddd72bb2decb` | Stock kernel + DFE ramdisk + permissive cmdline |
-| **`boot_oc_2.1ghz_android16.img`** | 11,079,680 | `879da6cfc5ce2e84cc5d54a21c69bbee28bf14278743dfe2ae1a711418fcbef9` | **Final Working Image:** 2.1 GHz OC kernel + DFE ramdisk |
+| **`boot_oc_2.1ghz_android16.img`** | 11,079,680 | `879da6cfc5ce2e84cc5d54a21c69bbee28bf14278743dfe2ae1a711418fcbef9` | Baseline Working Image: 2.1 GHz OC kernel + DFE ramdisk |
+| **`boot_oc_2.1ghz_android16_hwfix_v1.img`** | 10,582,016 | `c1d5136402ce81ec75a571d9892454eb5b0813ad3a0bdabc88bec15ee62ff6df` | **FAILED Image:** Hardware fixes included, but DTB truncated to 69,074 bytes (60 bytes cut off). Bootloader reset loop. |
+| **`boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img`** | 10,582,016 | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **Final Working Release Image:** Hardware fixes (front camera, LED191 flash, touch navigation keys) + complete 69,134-byte DTB. Verified working on physical device. |
 
 ---
 
@@ -42,3 +44,6 @@ This document records the exact SHA-256 hashes, component breakdowns, and differ
 1. The 2.1 GHz kernel in `boot_via_s48_32m_oc_2.1ghz_standard.img` originally failed to boot Android 16 purely due to the ramdisk's `fileencryption` setting.
 2. The kernel binary and DTB were 100% sound.
 3. Combining the 2.1 GHz kernel + 2.1 GHz DTB with the DFE ramdisk resulted in immediate, successful boot into the Android 16 launcher.
+4. `hwfix_v1` encountered an early boot reset because the packaging step truncated the DTB from 69,134 to 69,074 bytes (stock size reference error), causing `libfdt` to fail with `FDT_ERR_TRUNCATED`.
+5. Restoring the complete 69,134-byte DT table and validating with `scripts/verify_dtb_integrity.py` produced `boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img`, successfully verifying front camera, flashlight, and capacitive keys on the physical device.
+

@@ -28,3 +28,27 @@
 - **Cold Boot Time:** ~35 seconds from Preloader handshake to launcher.
 - **Thermal Behavior:** Idles at ~38°C; no thermal runaway observed at 2.1 GHz during initial bring-up tests.
 - **SELinux Status:** System is running with Enforcing mode active.
+
+---
+
+## 3. Hardware Fixes & Android 16 Hardware Validation (November 8, 2026)
+
+**Verification Status:** Verified on physical hardware by the user (`AtillaTokmak`).
+
+| Subsystem / Feature | Implementation / Driver | Hardware Test Result | Validation Notes |
+| :--- | :--- | :---: | :--- |
+| **Front Camera** | `gc2385sub_mipi_raw` | **PASS** | Camera HAL identifies facing front camera; preview and capture operational. |
+| **Flashlight / Torch** | `flashlights_led191` | **PASS** | Quick Settings flashlight toggle and camera capture flash operational. |
+| **Capacitive Touch Keys** | `mtk_gslX680` (Back, Home, App Switch) | **PASS** | Physical capacitive touch keys under display emit correct events and trigger navigation actions. On-screen navigation bar maintained in parallel. |
+| **DTB Integrity & Packaging** | `scripts/verify_dtb_integrity.py` | **PASS** | Complete 69,134-byte DT table verified; prevented DTB truncation defect from hwfix_v1. |
+
+---
+
+## 4. Boot Image Build History & Verification
+
+| Image Name | SHA-256 Hash | Physical Device Status | Notes |
+| :--- | :--- | :---: | :--- |
+| `boot_oc_2.1ghz_android16.img` | `879da6cfc5ce2e84cc5d54a21c69bbee28bf14278743dfe2ae1a711418fcbef9` | **PASS** | Baseline working Android 16 + 2.1 GHz OC kernel (hardware fixes not included). |
+| `boot_oc_2.1ghz_android16_hwfix_v1.img` | `c1d5136402ce81ec75a571d9892454eb5b0813ad3a0bdabc88bec15ee62ff6df` | **FAILED** | DTB truncated to 69,074 bytes (60 bytes cut off; `FDT_ERR_TRUNCATED`). Device reset to preloader. |
+| `boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img` | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **PASS** | **Final Working Release Image:** Kernel with front camera, LED191 flash, and capacitive touchkeys + complete 69,134-byte DTB. Verified working on physical device. |
+

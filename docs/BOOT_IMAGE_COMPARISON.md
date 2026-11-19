@@ -13,7 +13,9 @@ This document records the exact SHA-256 hashes, component breakdowns, and differ
 | **`boot_gsi.img`** | 10,131,456 | `1365822690a638c1947183e18a9ba38b03c2d7cd3c9342f14055ddd72bb2decb` | Stock kernel + DFE ramdisk + permissive cmdline |
 | **`boot_oc_2.1ghz_android16.img`** | 11,079,680 | `879da6cfc5ce2e84cc5d54a21c69bbee28bf14278743dfe2ae1a711418fcbef9` | Baseline Working Image: 2.1 GHz OC kernel + DFE ramdisk |
 | **`boot_oc_2.1ghz_android16_hwfix_v1.img`** | 10,582,016 | `c1d5136402ce81ec75a571d9892454eb5b0813ad3a0bdabc88bec15ee62ff6df` | **FAILED Image:** Hardware fixes included, but DTB truncated to 69,074 bytes (60 bytes cut off). Bootloader reset loop. |
-| **`boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img`** | 10,582,016 | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **Final Working Release Image:** Hardware fixes (front camera, LED191 flash, touch navigation keys) + complete 69,134-byte DTB. Verified working on physical device. |
+| **`boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img`** | 10,582,016 | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **V1 Known-Good Baseline:** 2.1 GHz OC + front/rear cameras + LED191 flash + complete 69,134-byte DTB (capacitive keys needed stock-exact coordinate fix). |
+| **`boot_oc_2.1ghz_android16_v1_plus_capkeys.img`** | 10,586,112 | `4017d6529fa75581a3417d71b768b34516a8d4e0d93f7611a8001607f8bbf60a` | **Initial Release Candidate (`414965654`):** V1 base + stock-exact `mtk_gslX680` capacitive keys (`Y=1293..1351`, `KEY_APPSELECT`/`KEY_HOMEPAGE`/`KEY_BACK`) + complete 69,134-byte DTB + DFE ramdisk (`b9cc1674...`). Verified working on physical device. |
+| **`boot_stock_android16.img`** | 10,072,064 | `1365822690a638c1947183e18a9ba38b03c2d7cd3c9342f14055ddd72bb2decb` | Bit-identical stock-kernel Android 16 boot image (stock kernel + stock DTB + DFE ramdisk `b9cc1674...`, Header v2 offsets `0x40080000`/`0x55000000`/`0x54000000`, `os_patch_level=2020-12`). |
 
 ---
 

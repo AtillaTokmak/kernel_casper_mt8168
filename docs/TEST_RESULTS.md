@@ -50,5 +50,19 @@
 | :--- | :--- | :---: | :--- |
 | `boot_oc_2.1ghz_android16.img` | `879da6cfc5ce2e84cc5d54a21c69bbee28bf14278743dfe2ae1a711418fcbef9` | **PASS** | Baseline working Android 16 + 2.1 GHz OC kernel (hardware fixes not included). |
 | `boot_oc_2.1ghz_android16_hwfix_v1.img` | `c1d5136402ce81ec75a571d9892454eb5b0813ad3a0bdabc88bec15ee62ff6df` | **FAILED** | DTB truncated to 69,074 bytes (60 bytes cut off; `FDT_ERR_TRUNCATED`). Device reset to preloader. |
-| `boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img` | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **PASS** | **Final Working Release Image:** Kernel with front camera, LED191 flash, and capacitive touchkeys + complete 69,134-byte DTB. Verified working on physical device. |
+| `boot_oc_2.1ghz_android16_hwfix_v1_dtbfix.img` | `a92375eebd011e3e51788273a5c6446e72570394aee357e38491ecc8e95695a5` | **PASS (Partial)** | V1 Known-Good baseline: 2.1 GHz OC, rear/front cameras (`gc5025` + `gc2385`), and LED191 flashlight verified; capacitive keys used generic `TPD_HAVE_BUTTON` (`key_y=883`) and did not trigger. |
+| `boot_oc_2.1ghz_android16_v1_plus_capkeys.img` | `4017d6529fa75581a3417d71b768b34516a8d4e0d93f7611a8001607f8bbf60a` | **PASS (Release)** | **Initial Release Candidate (`414965654`):** V1 OC + cameras + LED191 + stock-exact `mtk_gslX680` capacitive navigation keys (`Y=1293..1351`, `KEY_APPSELECT`/`KEY_HOMEPAGE`/`KEY_BACK`). Verified on physical device (AxionOS 2.9 Android 16 + clean stock `dtbo`/`vendor`). |
+| `boot_stock_android16.img` | `1365822690a638c1947183e18a9ba38b03c2d7cd3c9342f14055ddd72bb2decb` | **PASS** | Bit-identical reproduction of `boot_gsi.img` (stock C1.03 kernel + stock DTB + Android 16 DFE ramdisk). Verified booting both EvoX and AxionOS 2.9 Android 16 with working cameras and capacitive keys. |
+
+---
+
+## 5. Stock-Exact Capacitive Keys & Clean DTBO/Vendor Verification (November 20, 2026)
+
+* **Commit:** `414965654` (`via-s48: input: match stock kernel capacitive navigation keys in mtk_gslX680`)
+* **Root Cause Found via Stock Kernel ARM64 Disassembly:** The factory Casper C1.03 kernel keeps `use-tpd-button = <0x0>` and `TPD_HAVE_BUTTON` disabled, and intercepts touches directly inside `tpd_down()`/`tpd_up()` in the bezel band `Y = 1293..1351`:
+  * Left (`X = 91..149`) → `KEY_APPSELECT` (`580`)
+  * Center (`X = 411..469`) → `KEY_HOMEPAGE` (`172`)
+  * Right (`X = 651..709`) → `KEY_BACK` (`158`)
+* **Camera Verification:** Confirmed both `gc5025_mipi_raw` (Back, `2592x1944`) and `gc2385sub_mipi_raw` (Front, `1600x1200`) operational on Android 16 once stock `dtbo-verified.img` and stock `vendor` were restored cleanly.
+* **Physical Hardware Result:** All subsystems (2.1 GHz OC, rear & front cameras, LED191 flash, physical side buttons `mtk-kpd`, and under-display capacitive navigation keys `mtk-tpd`) verified **PASS** on `boot_oc_2.1ghz_android16_v1_plus_capkeys.img`.
 

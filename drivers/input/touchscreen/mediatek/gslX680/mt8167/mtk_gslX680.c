@@ -114,7 +114,7 @@ static char i2c_lock_flag;
 #define MONITOR_CYCLE_BY_REG_CHECK 1800
 #endif
 
-#define TPD_HAVE_BUTTON
+/* #define TPD_HAVE_BUTTON */
 #define TPD_KEY_COUNT 4
 #define TPD_KEYS                                                               \
 	{                                                                      \
@@ -880,9 +880,36 @@ static void tpd_rotate_270(int *x, int *y)
 #endif
 
 u8 rs_value1;
+static u8 gsl_key_appselect_flag;
+static u8 gsl_key_home_flag;
+static u8 gsl_key_back_flag;
+
 static void tpd_down(int id, int x, int y, int p)
 {
 	GSL_LOGD("----%s id: %d, x:%d, y:%d----\n", __func__, id, x, y);
+
+	/* Stock Casper VIA S48 (F716) capacitive navigation keys (Y=1293..1351) */
+	if (y >= 1293 && y <= 1351) {
+		if (x >= 91 && x <= 149) {
+			pr_debug("tpd_down appselect down\n");
+			input_report_key(tpd->dev, KEY_APPSELECT, 1);
+			input_mt_sync(tpd->dev);
+			gsl_key_appselect_flag = 1;
+			return;
+		} else if (x >= 411 && x <= 469) {
+			pr_debug("tpd_down home down\n");
+			input_report_key(tpd->dev, KEY_HOMEPAGE, 1);
+			input_mt_sync(tpd->dev);
+			gsl_key_home_flag = 1;
+			return;
+		} else if (x >= 651 && x <= 709) {
+			pr_debug("tpd_down back down\n");
+			input_report_key(tpd->dev, KEY_BACK, 1);
+			input_mt_sync(tpd->dev);
+			gsl_key_back_flag = 1;
+			return;
+		}
+	}
 
 #ifdef TPD_ROTATION_SUPPORT
 	switch (tpd_rotation_type) {
@@ -921,6 +948,26 @@ static void tpd_up(void)
 {
 	GSL_LOGD("------%s------\n", __func__);
 
+	if (gsl_key_appselect_flag) {
+		gsl_key_appselect_flag = 0;
+		pr_debug("tpd_down appselect up\n");
+		input_report_key(tpd->dev, KEY_APPSELECT, 0);
+		input_mt_sync(tpd->dev);
+		return;
+	} else if (gsl_key_home_flag) {
+		gsl_key_home_flag = 0;
+		pr_debug("tpd_down home up\n");
+		input_report_key(tpd->dev, KEY_HOMEPAGE, 0);
+		input_mt_sync(tpd->dev);
+		return;
+	} else if (gsl_key_back_flag) {
+		gsl_key_back_flag = 0;
+		pr_debug("tpd_down back up\n");
+		input_report_key(tpd->dev, KEY_BACK, 0);
+		input_mt_sync(tpd->dev);
+		return;
+	}
+
 	input_report_key(tpd->dev, BTN_TOUCH, 0);
 	input_mt_sync(tpd->dev);
 }
@@ -936,14 +983,18 @@ static void gsl_report_point(struct gsl_touch_info *ti)
 		gsl_up_flag = 0;
 		tpd_up();
 
-		tpd_button(ti->x[tmp], ti->y[tmp], 0);
+		if ((get_boot_mode() == FACTORY_BOOT) ||
+		    (get_boot_mode() == RECOVERY_BOOT))
+			tpd_button(ti->x[tmp], ti->y[tmp], 0);
 
 	} else {
 		gsl_up_flag = 1;
 		for (tmp = 0; ti->finger_num > tmp; tmp++) {
 
 			tpd_down(ti->id[tmp] - 1, ti->x[tmp], ti->y[tmp], 0);
-			tpd_button(ti->x[tmp], ti->y[tmp], 1);
+			if ((get_boot_mode() == FACTORY_BOOT) ||
+			    (get_boot_mode() == RECOVERY_BOOT))
+				tpd_button(ti->x[tmp], ti->y[tmp], 1);
 		}
 	}
 	input_sync(tpd->dev);
@@ -1426,15 +1477,12 @@ int tpd_local_init(void)
 
 	input_set_abs_params(tpd->dev, ABS_MT_TRACKING_ID, 0,
 			     (MAX_CONTACTS + 1), 0, 0);
+	set_bit(KEY_APPSELECT, tpd->dev->keybit);
+	set_bit(KEY_HOMEPAGE, tpd->dev->keybit);
+	set_bit(KEY_BACK, tpd->dev->keybit);
 #ifdef TPD_HAVE_BUTTON
-	if (tpd_dts_data.use_tpd_button) {
-		tpd_button_setting(tpd_dts_data.tpd_key_num,
-				   tpd_dts_data.tpd_key_local,
-				   tpd_dts_data.tpd_key_dim_local);
-	} else {
-		tpd_button_setting(TPD_KEY_COUNT, tpd_keys_local,
-				   tpd_keys_dim_local); /* initialize tpd button data */
-	}
+	tpd_button_setting(TPD_KEY_COUNT, tpd_keys_local,
+			   tpd_keys_dim_local); /* initialize tpd button data */
 #endif
 
 #if (defined(TPD_WARP_START) && defined(TPD_WARP_END))
@@ -1548,27 +1596,6 @@ static int __init tpd_driver_init(void)
 
 	GSL_LOGF();
 	tpd_get_dts_info();
-#ifdef TPD_HAVE_BUTTON
-	tpd_dts_data.use_tpd_button = 1;
-	if (tpd_dts_data.tpd_key_num == 0) {
-		tpd_dts_data.tpd_key_num = 3;
-		tpd_dts_data.tpd_key_local[0] = KEY_MENU;
-		tpd_dts_data.tpd_key_local[1] = KEY_HOMEPAGE;
-		tpd_dts_data.tpd_key_local[2] = KEY_BACK;
-		tpd_dts_data.tpd_key_dim_local[0].key_x = 90;
-		tpd_dts_data.tpd_key_dim_local[0].key_y = 883;
-		tpd_dts_data.tpd_key_dim_local[0].key_width = 100;
-		tpd_dts_data.tpd_key_dim_local[0].key_height = 40;
-		tpd_dts_data.tpd_key_dim_local[1].key_x = 230;
-		tpd_dts_data.tpd_key_dim_local[1].key_y = 883;
-		tpd_dts_data.tpd_key_dim_local[1].key_width = 100;
-		tpd_dts_data.tpd_key_dim_local[1].key_height = 40;
-		tpd_dts_data.tpd_key_dim_local[2].key_x = 370;
-		tpd_dts_data.tpd_key_dim_local[2].key_y = 883;
-		tpd_dts_data.tpd_key_dim_local[2].key_width = 100;
-		tpd_dts_data.tpd_key_dim_local[2].key_height = 40;
-	}
-#endif
 	/* register usr space */
 	ret = class_register(&db_interface_class);
 #ifdef ADD_I2C_DEVICE_ANDROID_4_0
